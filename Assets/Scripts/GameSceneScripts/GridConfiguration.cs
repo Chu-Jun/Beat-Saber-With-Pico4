@@ -7,13 +7,13 @@ public class GridConfiguration
     public int columns = 4;
     public int rows = 3;
     
-    [Header("Spacing (Easy to Edit)")]
-    public float columnSpacing = 1.5f;
-    public float rowSpacing = 1.2f;
+    [Header("Grid Spacing")]
+    public float columnSpacing = 1f;
+    public float rowSpacing = 1f;
     
     [Header("Grid Position")]
     public float spawnZ = 30f;
-    public float gridCenterY = 2f; // Adjust based on your track center height
+    public float gridCenterY = 1f; // Center Y position of the grid
     
     public Vector3 GetGridPosition(int column, int row)
     {

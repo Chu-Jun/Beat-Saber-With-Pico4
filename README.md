@@ -1,3 +1,40 @@
+# Features and Modules List
+
+## Scenes (Placeholder for now)
+1. ❌ Main Menu Scene (Start/Quit Game)
+2. ❌ Game Scene
+
+## Scripts
+1. ✅ PICO Integration
+2. ✅ Arena Grid Configuration
+3. ✅ Block Spawning
+4. ✅ Block Slicing
+5. ✅ Sound Effects (onSlice)
+6. ✅ Particle Effects (onSlice)
+7. ❌ Haptic Feedback (onSlice)
+8. ❌ LightSaber Trail Effects (onSwing)
+
+## 3D Models (Placeholder for now)
+1. ✅ Block
+2. ❌ LightSaber
+
+## Environment Setup
+1. ❌ Player Platform
+2. ❌ Arena
+3. ❌ Skybox
+4. ❌ Lighting
+5. ❌ Scoreboard / Combo Meter
+
+## Gameplay
+1. Beat Map 
+
+## Optimization
+1. Slice block arrow too 
+
+
+
+
+
 # PICO Interaction Sample Unity
 
 ![Model](https://github.com/Pico-Developer/PICOInteractionSample-Unity/blob/main/Interaction%20Sample.png)

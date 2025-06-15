@@ -84,9 +84,9 @@ public class SaberController : MonoBehaviour
         // Calculate slice direction and point
         Vector3 sliceDirection = averageVelocity.normalized;
         Vector3 slicePoint = other.ClosestPoint(transform.position);
-        
+
         // Attempt to slice the block
-        bool sliceSuccessful = block.TrySliceBlock(sliceDirection, slicePoint, saberType);
+        bool sliceSuccessful = true; //block.TrySliceBlock(sliceDirection, slicePoint, saberType);
         
         // Provide feedback
         if (sliceSuccessful)

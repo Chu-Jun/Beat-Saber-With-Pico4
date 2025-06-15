@@ -6,14 +6,14 @@ public class BlockSpawner : MonoBehaviour
 {
     [Header("Prefabs")]
     public GameObject blockPrefab;
-    
-    [Header("Grid Configuration")]
-    public GridConfiguration gridConfig = new GridConfiguration();
-    
+        
     [Header("Spawning Settings")]
     public float spawnInterval = 1f; // Time between spawns
     public bool autoSpawn = true;
     
+    [Header("Grid Configuration")]
+    public GridConfiguration gridConfig = new GridConfiguration();
+
     [Header("Future Beat Map Integration")]
     [Tooltip("This will be used for custom Beat Saber maps")]
     public List<BlockData> customPattern = new List<BlockData>();
@@ -41,8 +41,8 @@ public class BlockSpawner : MonoBehaviour
     public void SpawnRandomBlock()
     {
         // Generate random block data
-        BlockData.BlockType randomType = (BlockData.BlockType)Random.Range(0, 1);
-        BlockData.CutDirection randomDirection = (BlockData.CutDirection)Random.Range(0, 5);
+        BlockData.BlockType randomType = (BlockData.BlockType)Random.Range(0, 2);
+        BlockData.CutDirection randomDirection = (BlockData.CutDirection)Random.Range(0, 9);
         int randomColumn = Random.Range(0, gridConfig.columns);
         int randomRow = Random.Range(0, gridConfig.rows);
         
@@ -55,6 +55,7 @@ public class BlockSpawner : MonoBehaviour
         if (!gridConfig.IsValidGridPosition(blockData.column, blockData.row))
         {
             Debug.LogWarning($"Invalid grid position: Column {blockData.column}, Row {blockData.row}");
+            Debug.LogWarning($"Grid position is zero-indexed, ensure values are within range.");
             return;
         }
         
@@ -93,17 +94,31 @@ public class BlockSpawner : MonoBehaviour
     }
     
     // Manual spawning methods for testing
-    [ContextMenu("Spawn Test Red Block")]
-    public void SpawnTestRedBlock()
+    [ContextMenu("Spawn Test Red Block - Down")]
+    public void SpawnTestRedBlockDown()
     {
         BlockData testBlock = new BlockData(BlockData.BlockType.Red, BlockData.CutDirection.Down, 1, 1, Time.time);
         SpawnBlock(testBlock);
     }
+
+    [ContextMenu("Spawn Test Red Block - Left")]
+    public void SpawnTestRedBlockLeft()
+    {
+        BlockData testBlock = new BlockData(BlockData.BlockType.Red, BlockData.CutDirection.Left, 1, 1, Time.time);
+        SpawnBlock(testBlock);
+    }
     
-    [ContextMenu("Spawn Test Blue Block")]
-    public void SpawnTestBlueBlock()
+    [ContextMenu("Spawn Test Blue Block - Up")]
+    public void SpawnTestBlueBlockUp()
     {
         BlockData testBlock = new BlockData(BlockData.BlockType.Blue, BlockData.CutDirection.Up, 2, 1, Time.time);
+        SpawnBlock(testBlock);
+    }
+
+    [ContextMenu("Spawn Test Blue Block - Right")]
+    public void SpawnTestBlueBlockRight()
+    {
+        BlockData testBlock = new BlockData(BlockData.BlockType.Blue, BlockData.CutDirection.Right, 2, 1, Time.time);
         SpawnBlock(testBlock);
     }
 }
