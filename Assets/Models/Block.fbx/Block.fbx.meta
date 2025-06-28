@@ -13,7 +13,7 @@ ModelImporter:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
       name: CubeMaterial
-    second: {fileID: 2100000, guid: d6188abe1120a514383b2df994bed25f, type: 2}
+    second: {fileID: 2100000, guid: 43b47e1d0187d8a46a940955b1f497b9, type: 2}
   materials:
     materialImportMode: 2
     materialName: 0

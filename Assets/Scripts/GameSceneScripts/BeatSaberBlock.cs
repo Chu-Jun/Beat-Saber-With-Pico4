@@ -7,7 +7,9 @@ public class BeatSaberBlock : MonoBehaviour
     [Header("Block Properties")]
     public BlockData.BlockType blockType;
     public BlockData.CutDirection cutDirection;
-    public float moveSpeed = 5f;
+
+    [Tooltip("The speed at which the block moves towards the player. Determined by InfoData.")]
+    public float moveSpeed; 
 
     [Header("Visual Components")]
     public Renderer blockRenderer;  // Handles the visual appearance of the block
@@ -34,7 +36,7 @@ public class BeatSaberBlock : MonoBehaviour
     [Tooltip("How long sliced pieces stay before cleanup")]
     public float slicedLifetime = 3f;   // Time before sliced pieces are destroyed
 
-    private bool isSliced = false;
+    public bool IsSliced { get; private set; } 
 
     // Reference to the block mesh filter that will be sliced
     private MeshFilter cubeMeshFilter;
@@ -42,6 +44,10 @@ public class BeatSaberBlock : MonoBehaviour
 
     // Direction the block moves in (default is backward)
     private Vector3 moveDirection = Vector3.back;
+
+    // New private fields to store NJS and NJSO
+    private float noteJumpMovementSpeed;
+    private float noteJumpStartBeatOffset;
 
     void Start()
     {
@@ -123,9 +129,9 @@ public class BeatSaberBlock : MonoBehaviour
         if (!enabled || gameObject == null)
             return;
 
-        if (!isSliced)
+        if (!IsSliced)
         {
-            // Move the block
+            // Move the block using the loaded moveSpeed
             if (transform != null)
             {
                 transform.Translate(moveDirection * moveSpeed * Time.deltaTime);
@@ -141,11 +147,21 @@ public class BeatSaberBlock : MonoBehaviour
         }
     }
 
-    // Referenced by the BlockSpawner to initialize the block with specific data
-    public void Initialize(BlockData data)
+    // Modified Initialize method to accept NJS and NJSO
+    public void Initialize(BlockData data, float njs, float njso)
     {
         blockType = data.blockType;
         cutDirection = data.cutDirection;
+        
+        // Set the moveSpeed based on the NJS from InfoData
+        moveSpeed = njs; // Directly assign the Note Jump Movement Speed
+
+        // Store the offset, though its direct use in this script might be minimal
+        // It's more commonly used in the spawner to determine spawn distance/time.
+        noteJumpMovementSpeed = njs;
+        noteJumpStartBeatOffset = njso;
+
+        IsSliced = false; // Initialize the public property as false here!
 
         SetBlockColor();
         SetBlockRotation();
@@ -257,7 +273,7 @@ public class BeatSaberBlock : MonoBehaviour
 
     private bool SliceBlock()
     {
-        if (isSliced) return false;
+        if (IsSliced) return false;
 
         // Create a slicing plane
         SlicedHull hull = SliceObject(gameObject, sliceOrigin, sliceNormal);
@@ -267,13 +283,8 @@ public class BeatSaberBlock : MonoBehaviour
             CreateSlicedPiece(hull.CreateUpperHull(), true);
             CreateSlicedPiece(hull.CreateLowerHull(), false);
 
-            // // Destroy the original block
-            // Destroy(gameObject);
-            // isSliced = true;
-            // return true;
-
             // Mark as sliced but delay destruction to allow sound to play
-            isSliced = true;
+            IsSliced = true;
             
             // Hide the renderer instead of destroying immediately
             if (blockRenderer != null)
@@ -371,7 +382,7 @@ public class BeatSaberBlock : MonoBehaviour
 
     public bool AttemptSlice(Vector3 sliceOriginPos, Vector3 sliceNormalDir, BeatSaberSaber saber = null)
     {
-        if (isSliced)
+        if (IsSliced)
         {
             PlayFailSound();
             TriggerHapticFeedback(saber, false);

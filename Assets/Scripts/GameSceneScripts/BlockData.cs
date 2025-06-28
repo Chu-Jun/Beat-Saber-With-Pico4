@@ -28,11 +28,11 @@ public class BlockData
     public int row;
     public float spawnTime;
     
-    public BlockData(BlockType type, CutDirection direction, int col, int r, float time)
+    public BlockData(BlockType type, CutDirection direction, int c, int r, float time)
     {
         blockType = type;
         cutDirection = direction;
-        column = col;
+        column = c;
         row = r;
         spawnTime = time;
     }

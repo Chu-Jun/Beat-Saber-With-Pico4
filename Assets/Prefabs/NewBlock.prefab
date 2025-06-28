@@ -217,7 +217,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   blockType: 0
   cutDirection: 0
-  moveSpeed: 0
+  moveSpeed: 1
   blockRenderer: {fileID: 7404311944432090773}
   arrowIndicator: {fileID: 1479459572246584050}
   insideMaterial: {fileID: 2100000, guid: f998365bbc7c54a47b718b056d55342d, type: 2}

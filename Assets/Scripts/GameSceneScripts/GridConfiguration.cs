@@ -12,10 +12,11 @@ public class GridConfiguration
     public float rowSpacing = 1f;
     
     [Header("Grid Position")]
-    public float spawnZ = 30f;
     public float gridCenterY = 1f; // Center Y position of the grid
     
-    public Vector3 GetGridPosition(int column, int row)
+    // Accepts a custom Z-coordinate for spawning
+    // Adjustable for custom platform lengths
+    public Vector3 GetGridPosition(int column, int row, float zCoordinate)
     {
         // Calculate centered positions
         float startX = -(columns - 1) * columnSpacing * 0.5f;
@@ -24,9 +25,17 @@ public class GridConfiguration
         float x = startX + column * columnSpacing;
         float y = startY + row * rowSpacing;
         
-        return new Vector3(x, y, spawnZ);
+        return new Vector3(x, y, zCoordinate);
     }
     
+    // Original GetGridPosition for backward compatibility if needed elsewhere
+    // This is optional; you could remove this if this is the only use.
+    public Vector3 GetGridPosition(int column, int row)
+    {
+        // If a default Z is ever needed.
+        return GetGridPosition(column, row, 30f);
+    }
+
     public bool IsValidGridPosition(int column, int row)
     {
         return column >= 0 && column < columns && row >= 0 && row < rows;
