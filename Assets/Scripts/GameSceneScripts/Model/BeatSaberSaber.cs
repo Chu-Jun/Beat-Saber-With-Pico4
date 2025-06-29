@@ -15,24 +15,18 @@ public class BeatSaberSaber : MonoBehaviour
     public float minSwingSpeed = 2f;
     [Tooltip("How often to check swing direction (lower = more accurate)")]
     public float swingCheckInterval = 0.02f;
+    [Tooltip("Angle tolerance for swing direction (0-1, where 0.5 ≈ 60 degrees)")]
+    public float angleThreshold = 0.5f;
 
-    [Header("Lightsaber Trail Effect")]
-    [Tooltip("Trail renderer for lightsaber effect")]
-    public TrailRenderer saberTrail;
-    [Tooltip("Base trail width")]
-    public float baseTrailWidth = 0.1f;
-    [Tooltip("Maximum trail width at high speed")]
-    public float maxTrailWidth = 0.3f;
-    [Tooltip("Speed at which max trail width is reached")]
-    public float maxTrailSpeed = 10f;
-    [Tooltip("Base trail emission intensity")]
-    public Color baseTrailColor = Color.white;
-    [Tooltip("High-speed trail emission intensity")]
-    public Color highSpeedTrailColor = Color.cyan;
+    [Header("Cut Quality Thresholds")]
+    [Tooltip("Maximum distance from block center for a center cut")]
+    public float centerCutThreshold = 0.1f;
+    [Tooltip("Minimum cross product magnitude for valid slice normal")]
+    public float minSliceNormalMagnitude = 0.1f;
 
     // UI Manager Reference
     [Header("UI Manager Reference")]
-    [SerializeField] private BeatSaberUIManager uiManager; // Assign this in the Inspector!
+    [SerializeField] private UIManager uiManager;
     
     // Swing detection variables
     private Vector3 previousPosition;
@@ -56,10 +50,10 @@ public class BeatSaberSaber : MonoBehaviour
          // Find the UI Manager if not assigned in Inspector
         if (uiManager == null)
         {
-            uiManager = FindObjectOfType<BeatSaberUIManager>();
+            uiManager = FindObjectOfType<UIManager>();
             if (uiManager == null)
             {
-                Debug.LogError("BeatSaberSaber: BeatSaberUIManager not found in the scene! UI updates will not function.");
+                Debug.LogError("BeatSaberSaber: UIManager not found in the scene! UI updates will not function.");
             }
         }
     }
@@ -100,7 +94,6 @@ public class BeatSaberSaber : MonoBehaviour
     void Update()
     {
         UpdateSwingDetection();
-        UpdateTrailEffect();
     }
     
     private void UpdateSwingDetection()
@@ -111,7 +104,7 @@ public class BeatSaberSaber : MonoBehaviour
             Vector3 positionDelta = transform.position - previousPosition;
             float timeDelta = Time.time - lastSwingCheck;
             
-            if (timeDelta > 0)
+            if (timeDelta > 0.001f)
             {
                 currentVelocity = positionDelta / timeDelta;
             }
@@ -137,9 +130,8 @@ public class BeatSaberSaber : MonoBehaviour
         if (!CanSliceBlock(block))
         {
             Debug.Log($"{saberType} saber cannot slice {block.blockType} block");
-            // This is generally considered a miss/bad cut in Beat Saber
-            uiManager?.OnBadCut(); // Use null-conditional operator to avoid NRE if uiManager is null
-            block.PlaySliceFailure(this); // Pass saber reference for haptic feedback
+            uiManager?.OnBadCut();
+            block.PlayFailSound();
             return;
         }
         
@@ -148,19 +140,17 @@ public class BeatSaberSaber : MonoBehaviour
         if (swingSpeed < minSwingSpeed)
         {
             Debug.Log($"Swing too slow: {swingSpeed:F2} < {minSwingSpeed}");
-            uiManager?.OnBadCut(); // Too slow is a bad cut
-            block.PlaySliceFailure(this); // Pass saber reference for haptic feedback
+            uiManager?.OnBadCut();
+            block.PlayFailSound();
             return;
-        } else {
-            Debug.Log($"Good swing !");
         }
         
         // Check if swing direction is correct
         if (!IsCorrectSwingDirection(block, currentVelocity))
         {
             Debug.Log("Wrong swing direction!");
-            uiManager?.OnBadCut(); // Wrong direction is a bad cut
-            block.PlaySliceFailure(this); // Pass saber reference for haptic feedback
+            uiManager?.OnBadCut();
+            block.PlayFailSound();
             return;
         }
         
@@ -197,9 +187,7 @@ public class BeatSaberSaber : MonoBehaviour
         Vector3 requiredDirection = GetRequiredSwingDirection(block.cutDirection);
         
         // Check if swing direction matches required direction (with some tolerance)
-        float dotProduct = Vector3.Dot(swingDirection, requiredDirection);
-        float angleThreshold = 0.5f; // Roughly 60 degrees tolerance
-        
+        float dotProduct = Vector3.Dot(swingDirection, requiredDirection);        
         return dotProduct > angleThreshold;
     }
     
@@ -235,31 +223,43 @@ public class BeatSaberSaber : MonoBehaviour
         Vector3 sliceNormal = CalculateSliceNormal(currentVelocity);
         Vector3 sliceOrigin = transform.position;
         
-        // Attempt to slice the block (pass saber reference for haptic feedback)
-        // ASSUMPTION: BeatSaberBlock.AttemptSlice returns cut quality data (e.g., in a struct or tuple)
-        // For now, we'll pass placeholder values. You'll need to implement the actual calculation
-        // within your BeatSaberBlock script and modify this call accordingly.
-        bool sliceSuccess = block.AttemptSlice(sliceOrigin, sliceNormal, this);
+        // Attempt to slice the block
+        bool sliceSuccess = block.AttemptSlice(sliceOrigin, sliceNormal);
         
         if (sliceSuccess)
         {
             Debug.Log($"Successfully sliced {block.blockType} block with {saberType} saber!");
 
-            // --- UI Integration: Call OnNoteCut with dummy values for now ---
-            // You will need to replace these with actual calculated cut quality values from BeatSaberBlock.
-            float dummyCutAngle = 90f; // Example: Perfect angle
-            float dummyCutDistance = 0.05f; // Example: Close to center
-            bool dummyCenterCut = true; // Example: Hit the center dot
-            uiManager?.OnNoteCut(dummyCutAngle, dummyCutDistance, dummyCenterCut);
-            // --- End UI Integration ---
-
+            // Calculate actual cut quality metrics
+            float cutAngle = CalculateCutAngle(block, currentVelocity);
+            float cutDistance = CalculateCutDistance(block, sliceOrigin);
+            bool centerCut = IsCenterCut(block, sliceOrigin);
+            
+            uiManager?.OnNoteCut(cutAngle, cutDistance, centerCut);
         }
         else
         {
             Debug.Log($"Failed to slice {block.blockType} block with {saberType} saber!");
-            Debug.LogError($"Investigate if needed");
             uiManager?.OnBadCut(); // Treat any slicing failure as a bad cut for UI
         }
+    }
+
+    private float CalculateCutAngle(BeatSaberBlock block, Vector3 swingVelocity)
+    {
+        Vector3 requiredDirection = GetRequiredSwingDirection(block.cutDirection);
+        Vector3 actualDirection = swingVelocity.normalized;
+        return Vector3.Angle(requiredDirection, actualDirection);
+    }
+
+    private float CalculateCutDistance(BeatSaberBlock block, Vector3 sliceOrigin)
+    {
+        return Vector3.Distance(sliceOrigin, block.transform.position);
+    }
+
+    private bool IsCenterCut(BeatSaberBlock block, Vector3 sliceOrigin)
+    {
+        float distanceFromCenter = Vector3.Distance(sliceOrigin, block.transform.position);
+        return distanceFromCenter < centerCutThreshold;
     }
     
     private Vector3 CalculateSliceNormal(Vector3 swingVelocity)
@@ -269,56 +269,13 @@ public class BeatSaberSaber : MonoBehaviour
         Vector3 sliceNormal = Vector3.Cross(swingVelocity.normalized, Vector3.forward).normalized;
         
         // If the cross product is zero (swing is parallel to forward), use up vector
-        if (sliceNormal.magnitude < 0.1f)
+        if (sliceNormal.magnitude < minSliceNormalMagnitude)
         {
             sliceNormal = Vector3.Cross(swingVelocity.normalized, Vector3.up).normalized;
         }
         
         return sliceNormal;
     }
-    
-    // Trail effect method
-    private void UpdateTrailEffect()
-    {
-        if (saberTrail == null) return;
-        
-        float currentSpeed = currentVelocity.magnitude;
-        
-        // Calculate trail width based on swing speed
-        float speedRatio = Mathf.Clamp01(currentSpeed / maxTrailSpeed);
-        float trailWidth = Mathf.Lerp(baseTrailWidth, maxTrailWidth, speedRatio);
-        saberTrail.widthMultiplier = trailWidth;
-        
-        // Calculate trail color based on swing speed
-        Color trailColor = Color.Lerp(baseTrailColor, highSpeedTrailColor, speedRatio);
-        saberTrail.startColor = trailColor;
-        saberTrail.endColor = new Color(trailColor.r, trailColor.g, trailColor.b, 0f);
-        
-        // Enable/disable trail based on movement
-        bool shouldShowTrail = currentSpeed > minSwingSpeed * 0.3f; // Show trail at 30% of min swing speed
-        saberTrail.emitting = shouldShowTrail;
-    }
-    
-    // Haptic feedback method
-    // public void TriggerHapticFeedback(float strength, float duration)
-    // {
-    //     StartCoroutine(PlayHapticFeedback(strength, duration));
-    // }
-    
-    // private IEnumerator PlayHapticFeedback(float strength, float duration)
-    // {
-    //     // Convert strength to PICO SDK format (0-255)
-    //     int hapticStrength = Mathf.RoundToInt(strength * 255f);
-        
-    //     // Play haptic feedback
-    //     PXR_Input.SetControllerVibration(controllerHand, hapticStrength, Mathf.RoundToInt(duration * 1000f));
-        
-    //     // Wait for duration
-    //     yield return new WaitForSeconds(duration);
-        
-    //     // Stop haptic feedback
-    //     PXR_Input.SetControllerVibration(controllerHand, 0, 0);
-    // }
 
     // Public method to change saber type at runtime
     public void SetSaberType(SaberType newType)

@@ -36,7 +36,7 @@
           "_difficultyRank": 1,
           "_beatmapFilename": "EasyStandard.dat",
           "_noteJumpMovementSpeed": 10,
-          "_noteJumpStartBeatOffset": 0.987,
+          "_noteJumpStartBeatOffset": 2,
           "_beatmapColorSchemeIdx": 0,
           "_environmentNameIdx": 0,
           "_customData": {

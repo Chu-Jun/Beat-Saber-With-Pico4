@@ -26,14 +26,14 @@ public class BlockData
     public CutDirection cutDirection;
     public int column;
     public int row;
-    public float spawnTime;
+    public float sliceTime;
     
-    public BlockData(BlockType type, CutDirection direction, int c, int r, float time)
+    public BlockData(BlockType blockType, CutDirection cutDirection, int column, int row, float sliceTime)
     {
-        blockType = type;
-        cutDirection = direction;
-        column = c;
-        row = r;
-        spawnTime = time;
+        this.blockType = blockType;
+        this.cutDirection = cutDirection;
+        this.column = column;
+        this.row = row;
+        this.sliceTime = sliceTime;
     }
 }

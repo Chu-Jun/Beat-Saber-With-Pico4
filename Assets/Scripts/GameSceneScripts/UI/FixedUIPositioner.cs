@@ -8,7 +8,7 @@ public class FixedUIPositioner : MonoBehaviour
     [SerializeField] private Vector3 uiScale = new Vector3(0.005f, 0.005f, 0.005f);
     
     [Header("Play Area Reference")]
-    [SerializeField] private Transform playAreaCenter; // Optional: reference to play area center
+    [SerializeField] private Transform playAreaCenter;
     
     private void Start()
     {
@@ -28,18 +28,5 @@ public class FixedUIPositioner : MonoBehaviour
         transform.position = finalPosition;
         transform.rotation = Quaternion.Euler(uiRotation);
         transform.localScale = uiScale;
-    }
-    
-    // Call this method if you need to reposition UI during gameplay
-    public void ResetToFixedPosition()
-    {
-        PositionUI();
-    }
-    
-    // Method to adjust position during development
-    [ContextMenu("Update UI Position")]
-    private void UpdateUIPosition()
-    {
-        PositionUI();
     }
 }

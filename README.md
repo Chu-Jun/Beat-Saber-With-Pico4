@@ -2,7 +2,8 @@
 
 ## Scenes (Placeholder for now)
 1. ❌ Main Menu Scene (Start/Quit Game)
-2. ❌ Game Scene
+2. ✅ Game Scene
+
 
 ## Scripts
 1. ✅ PICO Integration
@@ -10,45 +11,33 @@
 3. ✅ Block Spawning
 4. ✅ Block Slicing
 5. ✅ Sound Effects (onSlice)
-6. ✅ Particle Effects (onSlice)
+6. ❌ Particle Effects (onSlice)
 7. ❌ Haptic Feedback (onSlice)
 8. ❌ LightSaber Trail Effects (onSwing)
 
+
 ## 3D Models (Placeholder for now)
 1. ✅ Block
-2. ❌ LightSaber
+2. ✅ LightSaber
 
 ## Environment Setup
-1. ❌ Player Platform
-2. ❌ Arena
-3. ❌ Skybox
-4. ❌ Lighting
-5. ❌ Scoreboard / Combo Meter
+1. ✅ Player Platform
+2. ✅ Arena
+3. ✅ Skybox
+4. ✅ Lighting
+5. ✅ Scoreboard / Combo Meter
+
 
 ## Gameplay
-1. Beat Map 
+1. ✅ Beat Map Integration
+
 
 ## Optimization
-1. Slice block arrow too 
+1. OnSlice, Arrow Mesh should also be split into half 
+2. If Blocks do not have any slice direction, it should have a center white dot 
 
-
-
-
-
-# PICO Interaction Sample Unity
-
-![Model](https://github.com/Pico-Developer/PICOInteractionSample-Unity/blob/main/Interaction%20Sample.png)
-
-This sample contains the following scenes that each showcase an interaction feature:
-1. Controller and Headset tracking
-2. Controller Haptics: Buffered and Unbuffered
-3. Controller Locomotion
-4. Hand Tracking Interactions
-5. Custom Hand Gesture
-6. Unity Spatial Keyboard
 
 ## Development Environment
-
 - SDK version: 3.0.4 
 - PICO device's system version: 5.11.0
 - Unity version: 2022.3.29f1
@@ -70,5 +59,3 @@ Use a USB cable to connect your PICO device to your PC, then open a command line
 adb install "filepath\filename.apk"
 
 
-## LICENSE
-Most of this project is licensed under the MIT License, see [License.md](https://github.com/Pico-Developer/InteractionSample-Unity/blob/main/License.md) for licenses of dependent files.

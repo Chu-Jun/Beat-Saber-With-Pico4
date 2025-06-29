@@ -2,7 +2,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 
-public class BeatSaberUIManager : MonoBehaviour
+public class UIManager : MonoBehaviour
 {
     [Header("UI References")]
     [SerializeField] private Slider healthBar;
@@ -28,8 +28,8 @@ public class BeatSaberUIManager : MonoBehaviour
     [SerializeField] private int[] comboThresholds = {4, 8, 16}; // Beat Saber thresholds for 2x, 4x, 8x
     [SerializeField] private int[] multiplierValues = {1, 2, 4, 8};
     
-    [Header("Score Settings")]
-    [SerializeField] private int maxNoteScore = 115; // Max score per note in Beat Saber
+    // [Header("Score Settings")]
+    // [SerializeField] private int maxNoteScore = 115; // Max score per note in Beat Saber
     
     private void Start()
     {
@@ -117,10 +117,12 @@ public class BeatSaberUIManager : MonoBehaviour
         // Break combo
         currentCombo = 0;
         currentMultiplier = 1;
-        
+
         // Lose health
         currentHealth = Mathf.Max(0, currentHealth - healthLossOnMiss);
-        
+
+        // OnNoteHit(100);
+
         // Update UI
         UpdateHealthBar();
         UpdateCombo();
@@ -131,21 +133,6 @@ public class BeatSaberUIManager : MonoBehaviour
         {
             OnLevelFailed();
         }
-
-        //  Debug.Log("OnNoteMiss called (TESTING: Incrementing score/combo instead of penalizing)");
-        // // --- START TEST BEHAVIOR ---
-        // // For testing, increment score and combo instead of breaking it.
-        // OnNoteHit(maxNoteScore); // Treat a miss as a perfect hit for testing score
-        // // Health is NOT lost for this test behavior
-        // // currentHealth = Mathf.Max(0, currentHealth - healthLossOnMiss); 
-        // // No fail condition check for this test behavior
-        // // if (currentHealth <= 0) { OnLevelFailed(); }
-        // // --- END TEST BEHAVIOR ---
-
-        // // Update UI based on the test behavior
-        // UpdateHealthBar(); // Still update in case it was called by something else
-        // UpdateCombo();
-        // UpdateMultiplier();
     }
     
     // Call this for bad cuts that don't miss but aren't good

@@ -1,5 +1,6 @@
 using UnityEngine;
 using EzySlice;
+using System;
 using System.Collections;
 
 public class BeatSaberBlock : MonoBehaviour
@@ -36,7 +37,15 @@ public class BeatSaberBlock : MonoBehaviour
     [Tooltip("How long sliced pieces stay before cleanup")]
     public float slicedLifetime = 3f;   // Time before sliced pieces are destroyed
 
+    [Header("Audio")]
+    [Tooltip("Sound played when block is successfully sliced")]
+    public AudioClip sliceSound;
+    [Tooltip("Sound played when slice attempt fails")]
+    public AudioClip failSound;
+    public AudioSource audioSource;
+
     public bool IsSliced { get; private set; } 
+    public event Action OnSliced;
 
     // Reference to the block mesh filter that will be sliced
     private MeshFilter cubeMeshFilter;
@@ -45,9 +54,10 @@ public class BeatSaberBlock : MonoBehaviour
     // Direction the block moves in (default is backward)
     private Vector3 moveDirection = Vector3.back;
 
-    // New private fields to store NJS and NJSO
-    private float noteJumpMovementSpeed;
-    private float noteJumpStartBeatOffset;
+    private bool hasLoggedReach = false;
+    private float songStartTime;
+    private float bpm;
+    private float beatToSecondsMultiplier = 60f;
 
     void Start()
     {
@@ -68,17 +78,13 @@ public class BeatSaberBlock : MonoBehaviour
 
         // Initialize audio source
         if (audioSource == null)
+        {
             audioSource = GetComponent<AudioSource>();
-            Debug.Log($"Found existing AudioSource: {audioSource != null}");
-        if (audioSource == null)
-            audioSource = gameObject.AddComponent<AudioSource>();
-            Debug.Log("Added new AudioSource component");
-
-        Debug.Log($"AudioSource enabled: {audioSource.enabled}, GameObject active: {gameObject.activeInHierarchy}");
-
-        // Initialize particle system
-        if (sliceParticles == null)
-            sliceParticles = GetComponentInChildren<ParticleSystem>();
+            if (audioSource == null) 
+            {
+                audioSource = gameObject.AddComponent<AudioSource>();
+            }
+        }
 
         // Find both cube and arrow meshes
         MeshFilter[] meshFilters = GetComponentsInChildren<MeshFilter>();
@@ -126,19 +132,28 @@ public class BeatSaberBlock : MonoBehaviour
     void Update()
     {
         // Check if component is enabled/active
-        if (!enabled || gameObject == null)
-            return;
+        if (!enabled) return;
 
         if (!IsSliced)
         {
-            // Move the block using the loaded moveSpeed
-            if (transform != null)
+            // Store previous position before moving
+            float previousZ = transform.position.z; 
+
+            transform.Translate(moveDirection * moveSpeed * Time.deltaTime);
+
+            // Check if block has reached the player (crossed z = 0)
+            if (!hasLoggedReach && previousZ > 0f && transform.position.z <= 0f)
             {
-                transform.Translate(moveDirection * moveSpeed * Time.deltaTime);
+                hasLoggedReach = true;
+
+                // Calculate real-time beat
+                float currentTime = (float)AudioSettings.dspTime - songStartTime;
+                float currentBeat = currentTime * bpm / beatToSecondsMultiplier;
+                Debug.Log($"Block reached player at beat: {currentBeat:F2}");
             }
 
             // Check if the block has moved out of bounds
-            if (transform != null && transform.position.z < -5f)
+            if (transform.position.z < -5f)
             {
                 // Using gameObject.name for better debug logging
                 Debug.Log($"Destroying out-of-bounds block: {gameObject.name}");
@@ -147,21 +162,17 @@ public class BeatSaberBlock : MonoBehaviour
         }
     }
 
-    // Modified Initialize method to accept NJS and NJSO
-    public void Initialize(BlockData data, float njs, float njso)
+    public void SetTimingInfo(float songStartTime, float bpm)
+    {
+        this.songStartTime = songStartTime;
+        this.bpm = bpm;
+    }
+
+    public void Initialize(BlockData data, float movementSpeed)
     {
         blockType = data.blockType;
         cutDirection = data.cutDirection;
-        
-        // Set the moveSpeed based on the NJS from InfoData
-        moveSpeed = njs; // Directly assign the Note Jump Movement Speed
-
-        // Store the offset, though its direct use in this script might be minimal
-        // It's more commonly used in the spawner to determine spawn distance/time.
-        noteJumpMovementSpeed = njs;
-        noteJumpStartBeatOffset = njso;
-
-        IsSliced = false; // Initialize the public property as false here!
+        moveSpeed = movementSpeed;
 
         SetBlockColor();
         SetBlockRotation();
@@ -224,64 +235,34 @@ public class BeatSaberBlock : MonoBehaviour
         }
     }
 
-    // Properties and Methods to slice the block
-    private Vector3 sliceNormal = Vector3.right;
-    private Vector3 sliceOrigin = Vector3.zero;
-
-    // Make slice parameters accessible (For Saber Integration)
-    public Vector3 SliceNormal 
-    { 
-        get { return sliceNormal; } 
-        set { sliceNormal = value; } 
-    }
-
-    public Vector3 SliceOrigin 
-    { 
-        get { return sliceOrigin; } 
-        set { sliceOrigin = value; } 
-    }
-
-    [ContextMenu("Test Slice Red Block (Top-Down)")]
-    public void TestSliceRedBlock()
+    public bool AttemptSlice(Vector3 sliceOriginPos, Vector3 sliceNormalDir)
     {
-        if (blockType != BlockData.BlockType.Red)
-        {
-            Debug.LogWarning("This is not a red block!");
-            return;
-        }
+        bool success = SliceBlock(sliceOriginPos, sliceNormalDir);
 
-        // Slice vertically from top to bottom
-        sliceNormal = Vector3.right;
-        sliceOrigin = transform.position + Vector3.up;
-        SliceBlock();
+        if (success)
+        {
+            PlaySliceSound();
+            OnSliced?.Invoke();
+        }
+        else
+        {
+            PlayFailSound();
+        }
+        
+        return success;
     }
 
-    [ContextMenu("Test Slice Blue Block (Right-Left)")]
-    public void TestSliceBlueBlock()
-    {
-        if (blockType != BlockData.BlockType.Blue)
-        {
-            Debug.LogWarning("This is not a blue block!");
-            return;
-        }
-
-        // Slice horizontally from right to left
-        sliceNormal = Vector3.up;
-        sliceOrigin = transform.position + Vector3.right;
-        SliceBlock();
-    }
-
-    private bool SliceBlock()
+    private bool SliceBlock(Vector3 sliceOriginPos, Vector3 sliceNormalDir)
     {
         if (IsSliced) return false;
 
         // Create a slicing plane
-        SlicedHull hull = SliceObject(gameObject, sliceOrigin, sliceNormal);
+        SlicedHull hull = SliceObject(gameObject, sliceOriginPos, sliceNormalDir);
 
         if (hull != null)
         {
-            CreateSlicedPiece(hull.CreateUpperHull(), true);
-            CreateSlicedPiece(hull.CreateLowerHull(), false);
+            CreateSlicedPiece(hull.CreateUpperHull(), sliceNormalDir, true);
+            CreateSlicedPiece(hull.CreateLowerHull(), sliceNormalDir, false);
 
             // Mark as sliced but delay destruction to allow sound to play
             IsSliced = true;
@@ -307,7 +288,7 @@ public class BeatSaberBlock : MonoBehaviour
         Destroy(gameObject);
     }
 
-    private SlicedHull SliceObject(GameObject obj, Vector3 planeOrigin, Vector3 planeNormal)
+    private SlicedHull SliceObject(GameObject obj, Vector3 sliceOriginPos, Vector3 sliceNormalDir)
     {
         // Get the cube mesh object (which is a child of the main GameObject)
         if (cubeMeshFilter == null || cubeMeshFilter.gameObject == null)
@@ -317,16 +298,14 @@ public class BeatSaberBlock : MonoBehaviour
         }
 
         // Use the cube GameObject for slicing instead of the parent
-        return cubeMeshFilter.gameObject.Slice(planeOrigin, planeNormal, insideMaterial);
+        return cubeMeshFilter.gameObject.Slice(sliceOriginPos, sliceNormalDir, insideMaterial);
     }
 
-    private void CreateSlicedPiece(GameObject piece, bool isUpperHalf)
+    private void CreateSlicedPiece(GameObject piece, Vector3 sliceNormalDir, bool isUpperHalf)
     {
         if (piece == null) return;
 
         // CRITICAL: Reposition the hull piece to match the parent Block's world position
-        // The hull piece is created at the child mesh's local position (0,0,0)
-        // We need to move it to the parent Block's world position
         piece.transform.position = transform.position;
         piece.transform.rotation = transform.rotation;
 
@@ -343,167 +322,36 @@ public class BeatSaberBlock : MonoBehaviour
         meshCollider.convex = true;
 
         // Calculate separation direction based on which half it is
-        Vector3 separationDir = isUpperHalf ? sliceNormal : -sliceNormal;
+        Vector3 separationDir = isUpperHalf ? sliceNormalDir : -sliceNormalDir;
 
         // Apply forces
-        // 1. Small separation force in opposite directions
         rb.AddForce(separationDir * separationForce, ForceMode.Impulse);
-
-        // 2. Small upward force to simulate lift
         rb.AddForce(Vector3.up * liftForce, ForceMode.Impulse);
-
-        // 3. Minimal random rotation
         rb.AddTorque(
             new Vector3(
-                Random.Range(-sliceTorque, sliceTorque),
-                Random.Range(-sliceTorque, sliceTorque),
-                Random.Range(-sliceTorque, sliceTorque)
+                UnityEngine.Random.Range(-sliceTorque, sliceTorque),
+                UnityEngine.Random.Range(-sliceTorque, sliceTorque),
+                UnityEngine.Random.Range(-sliceTorque, sliceTorque)
             ),
             ForceMode.Impulse
         );
 
         Destroy(piece, slicedLifetime);
-    }
-
-    // Properties and Methods for sound/visual effects
-    [Header("Audio")]
-    [Tooltip("Sound played when block is successfully sliced")]
-    public AudioClip sliceSound;
-    [Tooltip("Sound played when slice attempt fails")]
-    public AudioClip failSound;
-    public AudioSource audioSource;
-
-    [Header("Visual Effects")]
-    [Tooltip("Particle system for slice effect")]
-    public ParticleSystem sliceParticles;
-    [Tooltip("Colors for particle effects")]
-    public Color redParticleColor = Color.red;
-    public Color blueParticleColor = Color.blue;
-
-    public bool AttemptSlice(Vector3 sliceOriginPos, Vector3 sliceNormalDir, BeatSaberSaber saber = null)
+    }    
+   
+    public void PlaySliceSound()
     {
-        if (IsSliced)
+        if (audioSource != null && sliceSound != null)
         {
-            PlayFailSound();
-            TriggerHapticFeedback(saber, false);
-            return false;
+            audioSource.PlayOneShot(sliceSound);
         }
-
-        sliceOrigin = sliceOriginPos;
-        sliceNormal = sliceNormalDir;
-        
-        bool success = SliceBlock();
-        
-        if (success)
-        {
-            PlaySliceSound();
-            PlaySliceParticles();
-            TriggerHapticFeedback(saber, true);
-        }
-        else
-        {
-            PlayFailSound();
-            TriggerHapticFeedback(saber, false);
-        }
-        
-        return success;
     }
 
-    public void PlaySliceFailure(BeatSaberSaber saber = null)
-    {
-        PlayFailSound();
-        TriggerHapticFeedback(saber, false);
-    }
-
-    private void PlaySliceSound()
-    {
-        if (audioSource == null)
-        {
-            Debug.LogError("AudioSource is null!");
-            return;
-        }
-        
-        if (!audioSource.enabled)
-        {
-            Debug.LogError("AudioSource is disabled!");
-            audioSource.enabled = true; // Try to enable it
-        }
-        
-        if (!gameObject.activeInHierarchy)
-        {
-            Debug.LogError("GameObject is not active in hierarchy!");
-            return;
-        }
-        
-        if (sliceSound == null)
-        {
-            Debug.LogError("Slice sound clip is null!");
-            return;
-        }
-        
-        Debug.Log("Playing slice sound...");
-        audioSource.PlayOneShot(sliceSound);
-        // if (audioSource != null && sliceSound != null)
-        // {
-        //     audioSource.PlayOneShot(sliceSound);
-        // }
-    }
-
-    private void PlayFailSound()
+    public void PlayFailSound()
     {
         if (audioSource != null && failSound != null)
         {
             audioSource.PlayOneShot(failSound);
-        }
-    }
-
-    private void PlaySliceParticles()
-    {
-        if (sliceParticles != null)
-        {
-            // Set particle color based on block type
-            var main = sliceParticles.main;
-            main.startColor = blockType == BlockData.BlockType.Red ? redParticleColor : blueParticleColor;
-            Debug.Log("BeatSaberBlock: Block Color is {main.startColor}");
-
-            // Position particles at slice point
-            sliceParticles.transform.position = sliceOrigin;
-            Debug.Log("BeatSaberBlock: Particle Effect happens at {sliceParticles.transform.position}");
-            
-            // Play the particle effect
-            sliceParticles.Play();
-        }
-        else 
-        {
-            Debug.LogError("BeatSaberBlock: No slice particles found!");
-        }
-    }
-
-    // Properties and Methods for Haptic Feedback
-    [Header("Haptic Feedback")]
-    [Tooltip("Haptic strength for successful slice (0-1)")]
-    [Range(0f, 1f)]
-    public float sliceHapticStrength = 0.8f;
-    [Tooltip("Haptic duration for successful slice in seconds")]
-    public float sliceHapticDuration = 0.1f;
-    [Tooltip("Haptic strength for failed slice (0-1)")]
-    [Range(0f, 1f)]
-    public float failHapticStrength = 0.3f;
-    [Tooltip("Haptic duration for failed slice in seconds")]
-    public float failHapticDuration = 0.05f;
-
-    private void TriggerHapticFeedback(BeatSaberSaber saber, bool isSuccess)
-    {
-        if (saber != null)
-        {
-            // if (isSuccess)
-            // {
-            //     saber.TriggerHapticFeedback(sliceHapticStrength, sliceHapticDuration);
-            // }
-            // else
-            // {
-            //     saber.TriggerHapticFeedback(failHapticStrength, failHapticDuration);
-            // }
         }
     }
 }

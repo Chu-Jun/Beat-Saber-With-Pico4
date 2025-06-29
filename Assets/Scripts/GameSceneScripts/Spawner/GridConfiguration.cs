@@ -27,14 +27,6 @@ public class GridConfiguration
         
         return new Vector3(x, y, zCoordinate);
     }
-    
-    // Original GetGridPosition for backward compatibility if needed elsewhere
-    // This is optional; you could remove this if this is the only use.
-    public Vector3 GetGridPosition(int column, int row)
-    {
-        // If a default Z is ever needed.
-        return GetGridPosition(column, row, 30f);
-    }
 
     public bool IsValidGridPosition(int column, int row)
     {

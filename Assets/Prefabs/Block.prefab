@@ -78,8 +78,73 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
-    m_RemovedGameObjects: []
+    m_RemovedComponents:
+    - {fileID: 6562285194374213189, guid: adece73296772224294549c7e09e4fff, type: 3}
+    m_RemovedGameObjects:
+    - {fileID: 3082660995726228691, guid: adece73296772224294549c7e09e4fff, type: 3}
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 4389560447602068071, guid: adece73296772224294549c7e09e4fff,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 7865601044237683405}
   m_SourcePrefab: {fileID: 100100000, guid: adece73296772224294549c7e09e4fff, type: 3}
+--- !u!65 &2676983050080192623 stripped
+BoxCollider:
+  m_CorrespondingSourceObject: {fileID: 9065573548018872521, guid: adece73296772224294549c7e09e4fff,
+    type: 3}
+  m_PrefabInstance: {fileID: 6406914706162989222}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &3228345386243541938 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 8368970124929233684, guid: adece73296772224294549c7e09e4fff,
+    type: 3}
+  m_PrefabInstance: {fileID: 6406914706162989222}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &6810601356853784533 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 463293669563307891, guid: adece73296772224294549c7e09e4fff,
+    type: 3}
+  m_PrefabInstance: {fileID: 6406914706162989222}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &7206664312608207553 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 4389560447602068071, guid: adece73296772224294549c7e09e4fff,
+    type: 3}
+  m_PrefabInstance: {fileID: 6406914706162989222}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &7865601044237683405
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7206664312608207553}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6a51c8d374604774396cea2ac4c91b5b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  blockType: 0
+  cutDirection: 0
+  moveSpeed: 0
+  blockRenderer: {fileID: 3228345386243541938}
+  arrowIndicator: {fileID: 6810601356853784533}
+  insideMaterial: {fileID: 2100000, guid: 275e5a636572e2243961087dfc9c93c8, type: 2}
+  redMaterial: {fileID: 2100000, guid: 1f2017cb626c0814094ee89d37161a2f, type: 2}
+  blueMaterial: {fileID: 2100000, guid: 2b53cebbc0be0cb45805a175937c1336, type: 2}
+  blockRigidbody: {fileID: 7833666680536854394}
+  blockCollider: {fileID: 2676983050080192623}
+  separationForce: 1
+  liftForce: 0.5
+  sliceTorque: 2
+  slicedLifetime: 3
+  sliceSound: {fileID: 8300000, guid: 0a655d158699281488b0297c4d4d73fd, type: 3}
+  failSound: {fileID: 8300000, guid: 710c464ed838bd94e83377fff21fca49, type: 3}
+  audioSource: {fileID: 0}
+--- !u!54 &7833666680536854394 stripped
+Rigidbody:
+  m_CorrespondingSourceObject: {fileID: 3773779739360384988, guid: adece73296772224294549c7e09e4fff,
+    type: 3}
+  m_PrefabInstance: {fileID: 6406914706162989222}
+  m_PrefabAsset: {fileID: 0}
