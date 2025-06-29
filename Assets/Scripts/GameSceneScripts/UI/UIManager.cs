@@ -16,7 +16,7 @@ public class UIManager : MonoBehaviour
     [SerializeField] private RectTransform rightPanel;
     
     [Header("Game Values")]
-    [SerializeField] private float maxHealth = 50f; // Beat Saber uses 50 energy
+    [SerializeField] private float maxHealth = 50f;
     private float currentHealth;
     private int currentScore = 0;
     private int currentCombo = 0;
@@ -25,11 +25,8 @@ public class UIManager : MonoBehaviour
     [Header("Beat Saber Settings")]
     [SerializeField] private float healthLossOnMiss = 10f;
     [SerializeField] private float healthLossOnBadCut = 5f;
-    [SerializeField] private int[] comboThresholds = {4, 8, 16}; // Beat Saber thresholds for 2x, 4x, 8x
+    [SerializeField] private int[] comboThresholds = {2, 4, 8};
     [SerializeField] private int[] multiplierValues = {1, 2, 4, 8};
-    
-    // [Header("Score Settings")]
-    // [SerializeField] private int maxNoteScore = 115; // Max score per note in Beat Saber
     
     private void Start()
     {
@@ -59,28 +56,28 @@ public class UIManager : MonoBehaviour
         // Health bar at top center
         if (healthBarPanel != null)
         {
-            healthBarPanel.anchorMin = new Vector2(0.5f, 1f);
-            healthBarPanel.anchorMax = new Vector2(0.5f, 1f);
-            healthBarPanel.anchoredPosition = new Vector2(0, -50);
+            healthBarPanel.anchorMin = new Vector2(0.5f, 0.5f);
+            healthBarPanel.anchorMax = new Vector2(0.5f, 0.5f);
+            healthBarPanel.anchoredPosition = new Vector2(0, 200);
             healthBarPanel.sizeDelta = new Vector2(400, 20);
         }
         
         // Combo count at left
         if (leftPanel != null)
         {
-            leftPanel.anchorMin = new Vector2(0f, 0.8f);
-            leftPanel.anchorMax = new Vector2(0f, 0.8f);
-            leftPanel.anchoredPosition = new Vector2(50, 0);
-            leftPanel.sizeDelta = new Vector2(200, 100);
+            leftPanel.anchorMin = new Vector2(0.5f, 0.5f);
+            leftPanel.anchorMax = new Vector2(0.5f, 0.5f);
+            leftPanel.anchoredPosition = new Vector2(-500, 0);
+            leftPanel.sizeDelta = new Vector2(100, 100);
         }
         
         // Score and multiplier at right
         if (rightPanel != null)
         {
-            rightPanel.anchorMin = new Vector2(1f, 0.8f);
-            rightPanel.anchorMax = new Vector2(1f, 0.8f);
-            rightPanel.anchoredPosition = new Vector2(-50, 0);
-            rightPanel.sizeDelta = new Vector2(200, 120);
+            rightPanel.anchorMin = new Vector2(0.5f, 0.5f);
+            rightPanel.anchorMax = new Vector2(0.5f, 0.5f);
+            rightPanel.anchoredPosition = new Vector2(500, 0);
+            rightPanel.sizeDelta = new Vector2(100, 100);
         }
     }
     
@@ -115,13 +112,13 @@ public class UIManager : MonoBehaviour
     public void OnNoteMiss()
     {
         // Break combo
-        currentCombo = 0;
-        currentMultiplier = 1;
+        // currentCombo = 0;
+        // currentMultiplier = 1;
 
-        // Lose health
-        currentHealth = Mathf.Max(0, currentHealth - healthLossOnMiss);
+        // // Lose health
+        // currentHealth = Mathf.Max(0, currentHealth - healthLossOnMiss);
 
-        // OnNoteHit(100);
+        OnNoteHit(100);
 
         // Update UI
         UpdateHealthBar();
@@ -226,19 +223,12 @@ public class UIManager : MonoBehaviour
     {
         if (comboCountText != null)
         {
-            if (currentCombo >= 4) // Only show combo after reaching first multiplier threshold
-            {
-                comboCountText.text = currentCombo.ToString();
-                comboCountText.gameObject.SetActive(true);
-                
-                // Scale text based on combo (visual feedback)
-                float scale = Mathf.Min(1.5f, 1f + (currentCombo * 0.01f));
-                comboCountText.transform.localScale = Vector3.one * scale;
-            }
-            else
-            {
-                comboCountText.gameObject.SetActive(false);
-            }
+            comboCountText.text = currentCombo.ToString();
+            comboCountText.gameObject.SetActive(true);
+            
+            // Scale text based on combo (visual feedback)
+            float scale = Mathf.Min(1.5f, 1f + (currentCombo * 0.01f));
+            comboCountText.transform.localScale = Vector3.one * scale;
         }
     }
     

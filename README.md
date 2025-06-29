@@ -3,7 +3,7 @@
 ## Scenes (Placeholder for now)
 1. ❌ Main Menu Scene (Start/Quit Game)
 2. ✅ Game Scene
-
+3. ❌ Game End Scene
 
 ## Scripts
 1. ✅ PICO Integration
@@ -14,7 +14,6 @@
 6. ❌ Particle Effects (onSlice)
 7. ❌ Haptic Feedback (onSlice)
 8. ❌ LightSaber Trail Effects (onSwing)
-
 
 ## 3D Models (Placeholder for now)
 1. ✅ Block
@@ -27,12 +26,16 @@
 4. ✅ Lighting
 5. ✅ Scoreboard / Combo Meter
 
-
 ## Gameplay
 1. ✅ Beat Map Integration
 
+## Optimizations
+1. Block size and spacing 
+2. Saber functionality
+3. Song in-sync with blocks ? 
+4. Player position relative to stage
 
-## Optimization
+## Future Plans
 1. OnSlice, Arrow Mesh should also be split into half 
 2. If Blocks do not have any slice direction, it should have a center white dot 
 
