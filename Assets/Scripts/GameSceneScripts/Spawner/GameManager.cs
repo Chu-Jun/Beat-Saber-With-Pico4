@@ -212,9 +212,15 @@ public class GameManager : MonoBehaviour
         {
             blockSpawner.CleanupActiveBlocks();
         }
-        
+
         // Notify UI
         // uiManager?.OnGameStopped();
+        
+        if (uiManager != null)
+        {
+            int finalScore = uiManager.GetCurrentScore(); // Get the score from UIManager
+            uiManager.ShowGameOverScreen(finalScore);
+        }
         
         Debug.Log("Game stopped successfully");
     }
@@ -246,6 +252,12 @@ public class GameManager : MonoBehaviour
         // uiManager?.OnGameComplete();
         OnGameCompleted?.Invoke();
         
+        if (uiManager != null)
+        {
+            int finalScore = uiManager.GetCurrentScore();
+            uiManager.ShowGameOverScreen(finalScore);
+        }
+
         Debug.Log("Game completed successfully!");
     }
 

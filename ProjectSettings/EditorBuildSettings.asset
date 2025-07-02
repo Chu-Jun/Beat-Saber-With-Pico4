@@ -26,9 +26,12 @@ EditorBuildSettings:
   - enabled: 0
     path: Assets/Scenes/MainMenu.unity
     guid: 05a074730498a284590d855b250b4007
-  - enabled: 1
+  - enabled: 0
     path: Assets/Scenes/Game.unity
     guid: 12401d97a9aac2843b4a635c251093b6
+  - enabled: 1
+    path: Assets/Scenes/GameWithNewStage.unity
+    guid: 3c3ca1e98ed6cb346a8d35906fb87fd2
   m_configObjects:
     Unity.XR.PICO.LivePreview.Settings: {fileID: 11400000, guid: 528e8171a8daa9d4c90dcc6eb913cf82,
       type: 2}

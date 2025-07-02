@@ -1,14 +1,19 @@
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.SceneManagement;
 using TMPro;
 
 public class UIManager : MonoBehaviour
 {
-    [Header("UI References")]
+    [Header("Gameplay UI References")]
     [SerializeField] private Slider healthBar;
     [SerializeField] private TextMeshProUGUI scoreText;
     [SerializeField] private TextMeshProUGUI comboCountText;
     [SerializeField] private TextMeshProUGUI multiplierText;
+
+    [Header("Endgame UI References")]
+    [SerializeField] private GameObject gameOverCanvas;
+    [SerializeField] private TextMeshProUGUI finalScoreText;
     
     [Header("UI Panels for Positioning")]
     [SerializeField] private RectTransform healthBarPanel;
@@ -45,6 +50,12 @@ public class UIManager : MonoBehaviour
         UpdateScore();
         UpdateCombo();
         UpdateMultiplier();
+
+        // Hide game over canvas at start
+        if (gameOverCanvas != null)
+        {
+            gameOverCanvas.SetActive(false);
+        }
     }
     
     private void SetupUIPositions()
@@ -112,13 +123,13 @@ public class UIManager : MonoBehaviour
     public void OnNoteMiss()
     {
         // Break combo
-        // currentCombo = 0;
-        // currentMultiplier = 1;
+        currentCombo = 0;
+        currentMultiplier = 1;
 
-        // // Lose health
-        // currentHealth = Mathf.Max(0, currentHealth - healthLossOnMiss);
+        // Lose health
+        currentHealth = Mathf.Max(0, currentHealth - healthLossOnMiss);
 
-        OnNoteHit(100);
+        // OnNoteHit(100);
 
         // Update UI
         UpdateHealthBar();
@@ -267,6 +278,43 @@ public class UIManager : MonoBehaviour
     {
         Debug.Log("Level Failed! Health depleted.");
         // Implement level failure logic
+    }
+
+    // --- NEW: Game Over Screen Methods ---
+    public void ShowGameOverScreen(int score)
+    {
+        if (gameOverCanvas != null)
+        {
+            gameOverCanvas.SetActive(true);
+            if (finalScoreText != null)
+            {
+                finalScoreText.text = $"Final Score: {score.ToString("N0")}";
+            }
+
+            // Optionally hide other game UI elements
+            healthBarPanel.gameObject.SetActive(false);
+            leftPanel.gameObject.SetActive(false);
+            rightPanel.gameObject.SetActive(false);
+        }
+    }
+
+    public void HideGameOverScreen()
+    {
+        if (gameOverCanvas != null)
+        {
+            gameOverCanvas.SetActive(false);
+
+            // Optionally show other game UI elements if needed for a restart
+            healthBarPanel.gameObject.SetActive(true);
+            leftPanel.gameObject.SetActive(true);
+            rightPanel.gameObject.SetActive(true);
+        }
+    }
+
+    public void GoToMainMenu()
+    {
+        // Replace "MainMenuScene" with the actual name of your main menu scene
+        SceneManager.LoadScene("MainMenu");
     }
     
     // Public getters for other systems
