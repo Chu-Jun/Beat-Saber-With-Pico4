@@ -1,6 +1,6 @@
 # Features and Modules List
 
-## Scenes (Placeholder for now)
+## Scenes 
 1. ✅ Main Menu Scene (Start/Quit Game)
 2. ✅ Game Scene
 3. ✅ Game End Scene
@@ -12,7 +12,7 @@
 4. ✅ Block Slicing
 5. ✅ Sound Effects (onSlice)
 
-## 3D Models (Placeholder for now)
+## 3D Models
 1. ✅ Block
 2. ✅ LightSaber
 
