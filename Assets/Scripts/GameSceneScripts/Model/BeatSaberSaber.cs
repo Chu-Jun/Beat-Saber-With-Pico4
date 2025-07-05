@@ -126,10 +126,12 @@ public class BeatSaberSaber : MonoBehaviour
     
     private void AttemptSlice(BeatSaberBlock block)
     {
+        string missKeyword = "MISSED_BLOCK";
+
         // Check if this saber can slice this block type
         if (!CanSliceBlock(block))
         {
-            Debug.Log($"{saberType} saber cannot slice {block.blockType} block");
+            Debug.Log($"{missKeyword} {saberType} saber cannot slice {block.blockType} block");
             uiManager?.OnBadCut();
             block.PlayFailSound();
             return;
@@ -139,7 +141,7 @@ public class BeatSaberSaber : MonoBehaviour
         float swingSpeed = currentVelocity.magnitude;
         if (swingSpeed < minSwingSpeed)
         {
-            Debug.Log($"Swing too slow: {swingSpeed:F2} < {minSwingSpeed}");
+            Debug.Log($"{missKeyword} Swing too slow: {swingSpeed:F2} < {minSwingSpeed}");
             uiManager?.OnBadCut();
             block.PlayFailSound();
             return;
@@ -148,7 +150,7 @@ public class BeatSaberSaber : MonoBehaviour
         // Check if swing direction is correct
         if (!IsCorrectSwingDirection(block, currentVelocity))
         {
-            Debug.Log("Wrong swing direction!");
+            Debug.Log($"{missKeyword} Wrong swing direction!");
             uiManager?.OnBadCut();
             block.PlayFailSound();
             return;
@@ -228,7 +230,7 @@ public class BeatSaberSaber : MonoBehaviour
         
         if (sliceSuccess)
         {
-            Debug.Log($"Successfully sliced {block.blockType} block with {saberType} saber!");
+            // Debug.Log($"Successfully sliced {block.blockType} block with {saberType} saber!");
 
             // Calculate actual cut quality metrics
             float cutAngle = CalculateCutAngle(block, currentVelocity);
@@ -239,7 +241,7 @@ public class BeatSaberSaber : MonoBehaviour
         }
         else
         {
-            Debug.Log($"Failed to slice {block.blockType} block with {saberType} saber!");
+            // Debug.Log($"Failed to slice {block.blockType} block with {saberType} saber!");
             uiManager?.OnBadCut(); // Treat any slicing failure as a bad cut for UI
         }
     }

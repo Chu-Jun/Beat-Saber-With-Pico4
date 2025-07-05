@@ -1,79 +1,89 @@
 using UnityEngine;
-using TMPro; // Required if you chose TextMeshPro. If using Legacy UI Text, use: using UnityEngine.UI;
-using System.Text; // For StringBuilder, which is efficient for string manipulation
-using System.Collections.Generic; // For Queue
+using TMPro; // Required for TextMeshPro. If using Legacy UI Text, use: using UnityEngine.UI;
+using System.Collections; // Required for Coroutines
 
 public class InGameConsole : MonoBehaviour
 {
     [Tooltip("Assign the UI Text (TextMeshPro or Legacy) component here.")]
     public TextMeshProUGUI consoleText; // Change to 'public UnityEngine.UI.Text consoleText;' if using Legacy UI Text
 
-    [Tooltip("Maximum number of lines to display in the console.")]
-    [Range(5, 100)] // Allows setting a value between 5 and 100 in the Inspector
-    public int maxLines = 15; // Default maximum lines to display
+    [Tooltip("Keyword to filter for miss messages. Only messages containing this keyword will be displayed.")]
+    public string missKeyword = "MISSED_BLOCK"; // You can change this keyword in the Inspector
 
-    // StringBuilder for efficient text concatenation
-    private StringBuilder logBuilder = new StringBuilder();
-    // Queue to store log messages, allowing us to easily remove old ones
-    private Queue<string> logQueue = new Queue<string>();
+    [Tooltip("How long the miss message should be displayed before fading out.")]
+    [Range(0.5f, 5.0f)]
+    public float displayDuration = 2.0f; // Message display duration in seconds
 
-    // This method is called when the GameObject becomes enabled and active.
-    // We subscribe to the logMessageReceived event here.
+    // Private field to hold the currently running coroutine for hiding the text
+    private Coroutine hideTextCoroutine;
+
     void OnEnable()
     {
-        // Subscribe to Unity's log message event.
-        // This method will be called every time Debug.Log, Debug.LogWarning, Debug.LogError is used.
         Application.logMessageReceived += HandleLog;
-        Debug.Log("InGameConsole: Subscribed to log messages."); // This log will also appear!
+        Debug.Log("InGameConsole: Subscribed to log messages. Filtering for misses.");
+
+        // Ensure text is initially empty or hidden
+        if (consoleText != null)
+        {
+            consoleText.text = "";
+            consoleText.gameObject.SetActive(false); // Start hidden
+        }
     }
 
-    // This method is called when the GameObject becomes disabled or inactive.
-    // It's crucial to unsubscribe to prevent memory leaks and errors.
     void OnDisable()
     {
-        // Unsubscribe from the log message event.
         Application.logMessageReceived -= HandleLog;
         Debug.Log("InGameConsole: Unsubscribed from log messages.");
+
+        // Stop any running coroutine if disabled
+        if (hideTextCoroutine != null)
+        {
+            StopCoroutine(hideTextCoroutine);
+        }
     }
 
-    // This method is the callback for Application.logMessageReceived.
-    // It receives the log message, its stack trace, and its type (Log, Warning, Error).
     void HandleLog(string logString, string stackTrace, LogType type)
     {
-        // Format the log message with its type for clarity
-        string formattedLog = $"[{type}] {logString}";
-
-        // Add the new formatted log message to the end of the queue
-        logQueue.Enqueue(formattedLog);
-
-        // If the number of log messages exceeds the maximum allowed lines,
-        // remove the oldest message from the beginning of the queue.
-        while (logQueue.Count > maxLines)
+        // IMPORTANT: Only process logs that contain our specific missKeyword.
+        if (!logString.Contains(missKeyword))
         {
-            logQueue.Dequeue();
+            return; // If the log string doesn't contain the keyword, ignore it.
         }
 
-        // Clear the StringBuilder to rebuild the console text from scratch
-        logBuilder.Clear();
-
-        // Iterate through all messages currently in the queue
-        foreach (string log in logQueue)
-        {
-            // Append each log message followed by a new line
-            logBuilder.AppendLine(log);
-        }
+        // Format the log message: remove keyword and trim
+        string displayedLog = logString.Replace(missKeyword, "").Trim();
 
         // Check if the consoleText UI element has been assigned in the Inspector
         if (consoleText != null)
         {
-            // Update the UI Text component with the new consolidated log string
-            consoleText.text = logBuilder.ToString();
+            // Stop any existing hide coroutine to immediately show the new message
+            if (hideTextCoroutine != null)
+            {
+                StopCoroutine(hideTextCoroutine);
+            }
+
+            consoleText.text = displayedLog;
+            consoleText.gameObject.SetActive(true); // Make sure it's visible
+
+            // Start the coroutine to hide the text after displayDuration
+            hideTextCoroutine = StartCoroutine(HideTextAfterDelay(displayDuration));
         }
         else
         {
-            // If consoleText is not assigned, log a warning to the Unity console
-            // (This warning will not appear in our in-game console itself, as consoleText is null)
             Debug.LogWarning("InGameConsole: consoleText UI element is not assigned! Logs will not be displayed on Canvas.");
         }
+    }
+
+    private IEnumerator HideTextAfterDelay(float delay)
+    {
+        yield return new WaitForSeconds(delay);
+
+        if (consoleText != null)
+        {
+            // Clear the text and make the GameObject inactive
+            consoleText.text = "";
+            consoleText.gameObject.SetActive(false);
+        }
+        hideTextCoroutine = null; // Clear the reference to the coroutine
     }
 }

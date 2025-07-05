@@ -5,41 +5,52 @@ using TMPro;
 
 public class UIManager : MonoBehaviour
 {
-    [Header("Gameplay UI References")]
+    [Header("UI Canvas")]
+    [SerializeField] private GameObject gameplayCanvas;
+    [SerializeField] private GameObject gameOverCanvas;
+    
+    [Header("UI Canvas Components")]
     [SerializeField] private Slider healthBar;
     [SerializeField] private TextMeshProUGUI scoreText;
     [SerializeField] private TextMeshProUGUI comboCountText;
     [SerializeField] private TextMeshProUGUI multiplierText;
-
-    [Header("Endgame UI References")]
-    [SerializeField] private GameObject gameOverCanvas;
     [SerializeField] private TextMeshProUGUI finalScoreText;
     
-    [Header("UI Panels for Positioning")]
-    [SerializeField] private RectTransform healthBarPanel;
-    [SerializeField] private RectTransform leftPanel;
-    [SerializeField] private RectTransform rightPanel;
+    [Header("Component Dependencies")]
+    [SerializeField] private GameManager gameManager;
     
-    [Header("Game Values")]
+    [Header("Game Configuration")]
     [SerializeField] private float maxHealth = 50f;
-    private float currentHealth;
-    private int currentScore = 0;
-    private int currentCombo = 0;
-    private int currentMultiplier = 1;
-    
-    [Header("Beat Saber Settings")]
     [SerializeField] private float healthLossOnMiss = 10f;
     [SerializeField] private float healthLossOnBadCut = 5f;
     [SerializeField] private int[] comboThresholds = {2, 4, 8};
     [SerializeField] private int[] multiplierValues = {1, 2, 4, 8};
     
+    // Game state
+    private float currentHealth;
+    private int currentScore = 0;
+    private int currentCombo = 0;
+    private int currentMultiplier = 1;
+    
+    // Events
+    public event System.Action OnPlayerHealthDepleted;
+    
+    // Properties for external access
+    public int GetCurrentScore() => currentScore;
+    public int GetCurrentCombo() => currentCombo;
+    public int GetCurrentMultiplier() => currentMultiplier;
+    public float GetHealthPercentage() => currentHealth / maxHealth;
+    public bool IsHealthDepleted() => currentHealth <= 0;
+    
     private void Start()
     {
-        InitializeUI();
-        SetupUIPositions();
+        if (gameManager == null)
+            gameManager = FindObjectOfType<GameManager>();
+            
+        ResetGameState();
     }
     
-    private void InitializeUI()
+    public void ResetGameState()
     {
         currentHealth = maxHealth;
         currentScore = 0;
@@ -50,127 +61,68 @@ public class UIManager : MonoBehaviour
         UpdateScore();
         UpdateCombo();
         UpdateMultiplier();
-
-        // Hide game over canvas at start
-        if (gameOverCanvas != null)
-        {
-            gameOverCanvas.SetActive(false);
-        }
+        
+        // Show gameplay UI, hide game over UI
+        if (gameplayCanvas != null) gameplayCanvas.SetActive(true);
+        if (gameOverCanvas != null) gameOverCanvas.SetActive(false);
     }
     
-    private void SetupUIPositions()
-    {
-        // Position UI elements in Beat Saber style
-        Canvas canvas = GetComponent<Canvas>();
-        RectTransform canvasRect = canvas.GetComponent<RectTransform>();
-        
-        // Health bar at top center
-        if (healthBarPanel != null)
-        {
-            healthBarPanel.anchorMin = new Vector2(0.5f, 0.5f);
-            healthBarPanel.anchorMax = new Vector2(0.5f, 0.5f);
-            healthBarPanel.anchoredPosition = new Vector2(0, 200);
-            healthBarPanel.sizeDelta = new Vector2(400, 20);
-        }
-        
-        // Combo count at left
-        if (leftPanel != null)
-        {
-            leftPanel.anchorMin = new Vector2(0.5f, 0.5f);
-            leftPanel.anchorMax = new Vector2(0.5f, 0.5f);
-            leftPanel.anchoredPosition = new Vector2(-500, 0);
-            leftPanel.sizeDelta = new Vector2(100, 100);
-        }
-        
-        // Score and multiplier at right
-        if (rightPanel != null)
-        {
-            rightPanel.anchorMin = new Vector2(0.5f, 0.5f);
-            rightPanel.anchorMax = new Vector2(0.5f, 0.5f);
-            rightPanel.anchoredPosition = new Vector2(500, 0);
-            rightPanel.sizeDelta = new Vector2(100, 100);
-        }
-    }
-    
-    // Call this when player hits a note with specific score
+    // Scoring and gameplay methods
     public void OnNoteHit(int noteScore)
     {
-        // Increase combo
         currentCombo++;
         
-        // Add score with current multiplier
         int finalScore = noteScore * currentMultiplier;
         currentScore += finalScore;
         
-        // Update multiplier based on combo (Beat Saber style)
         UpdateMultiplierBasedOnCombo();
         
-        // Update UI immediately for real-time feedback
         UpdateScore();
         UpdateCombo();
         UpdateMultiplier();
     }
     
-    // Call this when player cuts a note (with cut quality scoring)
     public void OnNoteCut(float cutAngle, float cutDistance, bool centerCut)
     {
-        // Beat Saber scoring system
         int score = CalculateBeatSaberScore(cutAngle, cutDistance, centerCut);
         OnNoteHit(score);
     }
     
-    // Call this when player misses a note
     public void OnNoteMiss()
     {
-        // Break combo
         currentCombo = 0;
         currentMultiplier = 1;
-
-        // Lose health
         currentHealth = Mathf.Max(0, currentHealth - healthLossOnMiss);
 
-        // OnNoteHit(100);
-
-        // Update UI
         UpdateHealthBar();
         UpdateCombo();
         UpdateMultiplier();
         
-        // Check for fail condition
         if (currentHealth <= 0)
         {
-            OnLevelFailed();
+            OnPlayerHealthDepleted?.Invoke();
         }
     }
     
-    // Call this for bad cuts that don't miss but aren't good
     public void OnBadCut()
     {
-        // Break combo but less health loss
         currentCombo = 0;
         currentMultiplier = 1;
-        
-        // Smaller health loss
         currentHealth = Mathf.Max(0, currentHealth - healthLossOnBadCut);
         
-        // Update UI
         UpdateHealthBar();
         UpdateCombo();
         UpdateMultiplier();
         
         if (currentHealth <= 0)
         {
-            OnLevelFailed();
+            OnPlayerHealthDepleted?.Invoke();
         }
     }
     
     private int CalculateBeatSaberScore(float cutAngle, float cutDistance, bool centerCut)
     {
-        // Beat Saber scoring breakdown:
-        // - Up to 70 points for cut angle (0-70)
-        // - Up to 30 points for cut accuracy (0-30)  
-        // - Up to 15 points for center cut (0-15)
-        
+        // Beat Saber scoring: 70 (angle) + 30 (accuracy) + 15 (center) = 115 max
         int angleScore = Mathf.RoundToInt(Mathf.Clamp01(cutAngle / 100f) * 70f);
         int accuracyScore = Mathf.RoundToInt(Mathf.Clamp01(1f - cutDistance) * 30f);
         int centerScore = centerCut ? 15 : 0;
@@ -182,7 +134,6 @@ public class UIManager : MonoBehaviour
     {
         int newMultiplier = 1;
         
-        // Beat Saber multiplier thresholds: 4, 8, 16 combo for 2x, 4x, 8x
         for (int i = comboThresholds.Length - 1; i >= 0; i--)
         {
             if (currentCombo >= comboThresholds[i])
@@ -195,29 +146,27 @@ public class UIManager : MonoBehaviour
         if (newMultiplier != currentMultiplier)
         {
             currentMultiplier = newMultiplier;
-            // Optional: Add multiplier increase effect
-            OnMultiplierIncrease();
+            Debug.Log($"Multiplier increased to {currentMultiplier}x!");
         }
     }
     
+    // UI Update methods
     private void UpdateHealthBar()
     {
-        if (healthBar != null)
+        if (healthBar == null) return;
+        
+        float healthPercentage = currentHealth / maxHealth;
+        healthBar.value = healthPercentage;
+        
+        var fillImage = healthBar.fillRect.GetComponent<Image>();
+        if (fillImage != null)
         {
-            float healthPercentage = currentHealth / maxHealth;
-            healthBar.value = healthPercentage;
-            
-            // Beat Saber health bar colors
-            Image fillImage = healthBar.fillRect.GetComponent<Image>();
-            if (fillImage != null)
-            {
-                if (healthPercentage > 0.5f)
-                    fillImage.color = Color.green;
-                else if (healthPercentage > 0.25f)
-                    fillImage.color = Color.yellow;
-                else
-                    fillImage.color = Color.red;
-            }
+            if (healthPercentage > 0.5f)
+                fillImage.color = Color.green;
+            else if (healthPercentage > 0.25f)
+                fillImage.color = Color.yellow;
+            else
+                fillImage.color = Color.red;
         }
     }
     
@@ -225,102 +174,87 @@ public class UIManager : MonoBehaviour
     {
         if (scoreText != null)
         {
-            // Format score with commas for readability
             scoreText.text = currentScore.ToString("N0");
         }
     }
     
     private void UpdateCombo()
     {
-        if (comboCountText != null)
-        {
-            comboCountText.text = currentCombo.ToString();
-            comboCountText.gameObject.SetActive(true);
-            
-            // Scale text based on combo (visual feedback)
-            float scale = Mathf.Min(1.5f, 1f + (currentCombo * 0.01f));
-            comboCountText.transform.localScale = Vector3.one * scale;
-        }
+        if (comboCountText == null) return;
+        
+        comboCountText.text = currentCombo.ToString();
+        comboCountText.gameObject.SetActive(true);
+        
+        float scale = Mathf.Min(1.5f, 1f + (currentCombo * 0.01f));
+        comboCountText.transform.localScale = Vector3.one * scale;
     }
     
     private void UpdateMultiplier()
     {
-        if (multiplierText != null)
+        if (multiplierText == null) return;
+        
+        multiplierText.text = "x" + currentMultiplier.ToString();
+        
+        // Beat Saber multiplier colors
+        switch (currentMultiplier)
         {
-            multiplierText.text = "x" + currentMultiplier.ToString();
-            
-            // Beat Saber multiplier colors
-            switch (currentMultiplier)
-            {
-                case 1:
-                    multiplierText.color = new Color(0.8f, 0.8f, 0.8f); // Gray
-                    break;
-                case 2:
-                    multiplierText.color = new Color(1f, 1f, 0f); // Yellow
-                    break;
-                case 4:
-                    multiplierText.color = new Color(1f, 0.5f, 0f); // Orange
-                    break;
-                case 8:
-                    multiplierText.color = new Color(0f, 1f, 0f); // Green
-                    break;
-            }
+            case 1:
+                multiplierText.color = new Color(0.8f, 0.8f, 0.8f); // Gray
+                break;
+            case 2:
+                multiplierText.color = Color.yellow;
+                break;
+            case 4:
+                multiplierText.color = new Color(1f, 0.5f, 0f); // Orange
+                break;
+            case 8:
+                multiplierText.color = Color.green;
+                break;
         }
     }
     
-    private void OnMultiplierIncrease()
+    // Game Over Screen methods
+    public void ShowGameOverScreen(int finalScore)
     {
-        // Optional: Add visual/audio feedback for multiplier increase
-        Debug.Log($"Multiplier increased to {currentMultiplier}x!");
+        if (finalScoreText != null)
+        {
+            finalScoreText.text = $"Final Score: {finalScore:N0}";
+        }
+        
+        if (gameplayCanvas != null) gameplayCanvas.SetActive(false);
+        if (gameOverCanvas != null) gameOverCanvas.SetActive(true);
     }
     
-    private void OnLevelFailed()
-    {
-        Debug.Log("Level Failed! Health depleted.");
-        // Implement level failure logic
-    }
-
-    // --- NEW: Game Over Screen Methods ---
-    public void ShowGameOverScreen(int score)
-    {
-        if (gameOverCanvas != null)
-        {
-            gameOverCanvas.SetActive(true);
-            if (finalScoreText != null)
-            {
-                finalScoreText.text = $"Final Score: {score.ToString("N0")}";
-            }
-
-            // Optionally hide other game UI elements
-            healthBarPanel.gameObject.SetActive(false);
-            leftPanel.gameObject.SetActive(false);
-            rightPanel.gameObject.SetActive(false);
-        }
-    }
-
     public void HideGameOverScreen()
     {
-        if (gameOverCanvas != null)
-        {
-            gameOverCanvas.SetActive(false);
-
-            // Optionally show other game UI elements if needed for a restart
-            healthBarPanel.gameObject.SetActive(true);
-            leftPanel.gameObject.SetActive(true);
-            rightPanel.gameObject.SetActive(true);
-        }
-    }
-
-    public void GoToMainMenu()
-    {
-        // Replace "MainMenuScene" with the actual name of your main menu scene
-        SceneManager.LoadScene("MainMenu");
+        if (gameplayCanvas != null) gameplayCanvas.SetActive(true);
+        if (gameOverCanvas != null) gameOverCanvas.SetActive(false);
     }
     
-    // Public getters for other systems
-    public int GetCurrentScore() => currentScore;
-    public int GetCurrentCombo() => currentCombo;
-    public int GetCurrentMultiplier() => currentMultiplier;
-    public float GetHealthPercentage() => currentHealth / maxHealth;
-    public bool IsHealthDepleted() => currentHealth <= 0;
+    // UI Action methods - called by buttons
+    public void RestartLevel()
+    {
+        ResetGameState();
+        
+        if (gameManager != null)
+        {
+            gameManager.RestartCurrentLevel();
+        }
+        else
+        {
+            Debug.LogError("UIManager: GameManager reference not found for restart");
+        }
+    }
+    
+    public void GoToMainMenu()
+    {
+        if (gameManager != null)
+        {
+            gameManager.GoToMainMenu();
+        }
+        else
+        {
+            SceneManager.LoadScene("MainMenu");
+        }
+    }
 }

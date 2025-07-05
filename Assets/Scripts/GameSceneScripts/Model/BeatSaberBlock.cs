@@ -267,6 +267,12 @@ public class BeatSaberBlock : MonoBehaviour
             // Mark as sliced but delay destruction to allow sound to play
             IsSliced = true;
             
+            // Explicitly disable the arrow indicator
+            if (arrowIndicator != null)
+            {
+                arrowIndicator.SetActive(false);
+            }
+            
             // Hide the renderer instead of destroying immediately
             if (blockRenderer != null)
                 blockRenderer.enabled = false;

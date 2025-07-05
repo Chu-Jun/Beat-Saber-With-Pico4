@@ -1,9 +1,9 @@
 # Features and Modules List
 
 ## Scenes (Placeholder for now)
-1. ❌ Main Menu Scene (Start/Quit Game)
+1. ✅ Main Menu Scene (Start/Quit Game)
 2. ✅ Game Scene
-3. ❌ Game End Scene
+3. ✅ Game End Scene
 
 ## Scripts
 1. ✅ PICO Integration

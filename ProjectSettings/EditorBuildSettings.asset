@@ -23,15 +23,18 @@ EditorBuildSettings:
   - enabled: 0
     path: Assets/Scenes/UnitySpatialKeyboard.unity
     guid: 1300f34c0d063684fa04064c83115db3
-  - enabled: 0
+  - enabled: 1
     path: Assets/Scenes/MainMenu.unity
     guid: 05a074730498a284590d855b250b4007
   - enabled: 0
-    path: Assets/Scenes/Game.unity
+    path: Assets/Scenes/OldGameScene.unity
     guid: 12401d97a9aac2843b4a635c251093b6
-  - enabled: 1
+  - enabled: 0
     path: Assets/Scenes/GameWithNewStage.unity
     guid: 3c3ca1e98ed6cb346a8d35906fb87fd2
+  - enabled: 1
+    path: Assets/Scenes/Game.unity
+    guid: 66e9e770e005ac9498add79f23a815c3
   m_configObjects:
     Unity.XR.PICO.LivePreview.Settings: {fileID: 11400000, guid: 528e8171a8daa9d4c90dcc6eb913cf82,
       type: 2}
