@@ -26,12 +26,6 @@
 ## Gameplay
 1. ✅ Beat Map Integration
 
-## Optimizations
-1. Block size and spacing 
-2. Saber functionality
-3. Song in-sync with blocks ? 
-4. Player position relative to stage
-
 ## Future Plans
 1. OnSlice, Arrow Mesh should also be split into half 
 2. If Blocks do not have any slice direction, it should have a center white dot
